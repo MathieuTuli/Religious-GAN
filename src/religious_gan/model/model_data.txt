@@ -1,1 +1,2 @@
-total_words: 10max_sequence_len: 12
+total_words: 3630
+max_sequence_len: 19
