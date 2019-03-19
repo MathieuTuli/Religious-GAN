@@ -16,7 +16,7 @@ import numpy as np
 
 class LSTM:
     def __init__(self, corpus_path):
-        self.corpus = self.load_corpus(corpus_path)
+        self.dataset_preperation(corpus_path)
         self.tokenizer = Tokenizer()
         self.model: keras.engine.sequential.Sequential = None
         self.predictors: List[List[str]] = None
@@ -30,10 +30,13 @@ class LSTM:
             corpus = corpus_file.read()
         return corpus
 
-    def dataset_preperation(self,) -> Tuple[List[List[str]], List[str],
-                                            int, int]:
+    def dataset_preperation(
+            self,
+            corpus_path: pathlib.Path) -> Tuple[List[List[str]], List[str],
+                                                int, int]:
+        corpus = self.load_corpus(corpus_path)
         # first tokenize
-        corpus = self.corpus.lower().split("\n")
+        corpus = corpus.lower().split("\n")
         self.tokenizer.fit_on_texts(corpus)
         total_words = len(self.tokenizer.word_index) + 1
 
@@ -69,21 +72,26 @@ class LSTM:
         model.add(Dropout(0.1))
         model.add(Dense(self.total_words, activation='softmax'))
         model.compile(loss='categorical_crossentropy', optimizer='adam')
-        model.fit(self.predictors, self.label, epochs=100, verbose=1)
         self.model = model
         model_json = model.to_json()
-        json_path = 'model/model.json'
-        weights_path = 'model/model_weights.h5'
-        model_path = 'model/model.h5'
 
+        json_path = 'model/model.json'
         with open(str(json_path), 'w') as json_file:
             json_file.write(model_json)
+
+        weights_path = 'model/model_weights.h5'
         model.save_weights(str(weights_path))
+
+        model_path = 'model/model.h5'
         model.save(str(model_path))
+
         other_data = 'model/model_data.txt'
         with open(other_data, 'w') as data_file:
             data_file.write(f"total_words: {self.total_words}\n")
             data_file.write(f"max_sequence_len: {self.max_sequence_len}")
+
+    def train(self,) -> None:
+        self.model.fit(self.predictors, self.label, epochs=100, verbose=1)
 
     def generate_text(self,
                       seed_text: str,
